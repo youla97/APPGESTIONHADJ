@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block titre %}Tableau de bord – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+  <h1 class="h4 mb-0">Tableau de bord</h1>
+  <span class="badge text-bg-success fs-6">{% if campagne %}{{ campagne }}{% else %}Aucune campagne définie{% endif %}</span>
+</div>
+
+{% with i=indicateurs %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl-3"><div class="card carte-indicateur shadow-sm"><div class="card-body">
+    <div class="text-muted small">Total pèlerins</div><div class="valeur">{{ i.total|intcomma }}</div>
+    <div class="small text-muted">+{{ i.jour }} aujourd'hui · +{{ i.semaine }} cette semaine</div>
+  </div></div></div>
+  <div class="col-6 col-md-4 col-xl-3"><div class="card carte-indicateur shadow-sm"><div class="card-body">
+    <div class="text-muted small">Dossiers complets</div><div class="valeur">{{ i.complets|intcomma }}</div>
+    <a class="small" href="{% url 'pelerins:liste' %}?statut_dossier=INCOMPLET">{{ i.incomplets }} incomplet(s)</a>
+  </div></div></div>
+  <div class="col-6 col-md-4 col-xl-3"><div class="card carte-indicateur alerte shadow-sm"><div class="card-body">
+    <div class="text-muted small">Passeports expirés</div><div class="valeur">{{ i.expires|intcomma }}</div>
+    <a class="small" href="{% url 'pelerins:liste' %}?statut_passeport=ATTENTION">{{ i.proches_expiration }} proche(s) de l'expiration / non conformes</a>
+  </div></div></div>
+  <div class="col-6 col-md-4 col-xl-3"><div class="card carte-indicateur attention shadow-sm"><div class="card-body">
+    <div class="text-muted small">Doublons à traiter</div><div class="valeur">{{ i.doublons|intcomma }}</div>
+    <div class="small text-muted">Badges : {{ i.badges_imprimes }} imprimé(s) · {{ i.badges_non_imprimes }} non imprimé(s)</div>
+  </div></div></div>
+</div>
+{% endwith %}
+
+<div class="row g-3" id="statistiques">
+  <div class="col-12 col-xl-8"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">Évolution des inscriptions (30 jours)</h2><canvas id="g-evolution" height="110"></canvas>
+  </div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">Répartition hommes / femmes</h2><canvas id="g-sexe"></canvas>
+  </div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">Répartition par région</h2><canvas id="g-regions"></canvas>
+  </div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">Tranches d'âge</h2><canvas id="g-ages"></canvas>
+  </div></div></div>
+  <div class="col-12 col-md-6 col-xl-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">État des dossiers / passeports</h2><canvas id="g-dossiers"></canvas><canvas id="g-passeports" class="mt-3"></canvas>
+  </div></div></div>
+</div>
+{{ graphiques|json_script:"donnees-graphiques" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const g = JSON.parse(document.getElementById("donnees-graphiques").textContent);
+  const vert = "#0b6e4f", palette = ["#0b6e4f", "#ce1126", "#e0a800", "#2f6db5", "#7a4fb0", "#1a9aa0", "#b35c1e", "#6b7a72"];
+  const opt = { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } };
+  new Chart("g-evolution", { type: "line", data: { labels: g.evolution.labels, datasets: [{ data: g.evolution.data, borderColor: vert, backgroundColor: "rgba(11,110,79,.12)", fill: true, tension: .3 }] }, options: opt });
+  new Chart("g-sexe", { type: "doughnut", data: { labels: g.sexe.labels, datasets: [{ data: g.sexe.data, backgroundColor: [vert, "#e0a800"] }] } });
+  new Chart("g-regions", { type: "bar", data: { labels: g.regions.labels, datasets: [{ data: g.regions.data, backgroundColor: vert }] }, options: { ...opt, indexAxis: "y" } });
+  new Chart("g-ages", { type: "bar", data: { labels: g.ages.labels, datasets: [{ data: g.ages.data, backgroundColor: "#2f6db5" }] }, options: opt });
+  new Chart("g-dossiers", { type: "pie", data: { labels: g.dossiers.labels, datasets: [{ data: g.dossiers.data, backgroundColor: palette }] } });
+  new Chart("g-passeports", { type: "pie", data: { labels: g.passeports.labels, datasets: [{ data: g.passeports.data, backgroundColor: ["#0b6e4f", "#e0a800", "#ce1126", "#343a40"] }] } });
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load droits humanize %}
+{% block titre %}Pèlerins – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+  <h1 class="h4 mb-0">Pèlerins <span class="badge text-bg-secondary">{{ total|intcomma }}</span></h1>
+  <div class="d-flex gap-2" id="exports">
+    {% if user|peut:"exports" %}
+    <div class="btn-group">
+      <a class="btn btn-outline-secondary btn-sm" href="?{{ params }}{% if params %}&{% endif %}export=xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+      <a class="btn btn-outline-secondary btn-sm" href="?{{ params }}{% if params %}&{% endif %}export=csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a class="btn btn-outline-secondary btn-sm" href="?{{ params }}{% if params %}&{% endif %}export=pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+    </div>
+    {% endif %}
+    {% if user|peut:"pelerins.creer" %}
+    <a class="btn btn-primary btn-sm" href="{% url 'pelerins:creer' %}"><i class="bi bi-person-plus"></i> Nouveau</a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="get" class="card shadow-sm mb-3" data-cascade-geo>
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-12 col-lg-4">{{ form.q }}</div>
+      <div class="col-6 col-md-3 col-lg-2">{{ form.region }}</div>
+      <div class="col-6 col-md-3 col-lg-2">{{ form.prefecture }}</div>
+      <div class="col-6 col-md-3 col-lg-2">{{ form.commune }}</div>
+      <div class="col-6 col-md-3 col-lg-2">{{ form.quartier }}</div>
+    </div>
+    <div class="collapse {% if request.GET.campagne or request.GET.statut_dossier or request.GET.statut_passeport or request.GET.sexe or request.GET.groupe %}show{% endif %}" id="filtres-avances">
+      <div class="row g-2 mt-1">
+        {% for champ in form %}{% if champ.name in "campagne groupe statut_dossier statut_passeport sexe" %}
+        <div class="col-6 col-md-4 col-lg"><label class="form-label small mb-0">{{ champ.label }}</label>{{ champ }}</div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    <div class="mt-2 d-flex gap-2">
+      <button class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Rechercher</button>
+      <button class="btn btn-link btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtres-avances">Filtres avancés</button>
+      <a class="btn btn-link btn-sm text-secondary" href="{% url 'pelerins:liste' %}">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr>
+        <th>Matricule</th><th>Nom et prénoms</th><th class="d-none d-md-table-cell">Sexe</th>
+        <th class="d-none d-md-table-cell">Naissance</th><th>Téléphone</th><th class="d-none d-lg-table-cell">Localisation</th>
+        <th class="text-end">Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for p in page %}
+        <tr>
+          <td class="text-nowrap"><a href="{% url 'pelerins:detail' p.pk %}">{{ p.matricule }}</a></td>
+          <td><a class="text-reset text-decoration-none" href="{% url 'pelerins:detail' p.pk %}"><strong>{{ p.nom }}</strong> {{ p.prenoms }}</a></td>
+          <td class="d-none d-md-table-cell">{{ p.sexe }}</td>
+          <td class="d-none d-md-table-cell">{{ p.date_naissance|date:"d/m/Y" }}</td>
+          <td class="text-nowrap">{{ p.telephone_principal }}</td>
+          <td class="d-none d-lg-table-cell small">{{ p.commune.prefecture.region }} › {{ p.commune.prefecture }} › {{ p.commune }}{% if p.quartier %} › {{ p.quartier }}{% endif %}</td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'pelerins:detail' p.pk %}" title="Voir la fiche"><i class="bi bi-eye"></i></a>
+            {% if user|peut:"pelerins.modifier" %}
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'pelerins:modifier' p.pk %}" title="Modifier"><i class="bi bi-pencil"></i></a>
+            {% endif %}
+            {% if user|peut:"pelerins.supprimer" %}
+            <button type="button" class="btn btn-sm btn-outline-danger" title="Supprimer"
+                    data-bs-toggle="modal" data-bs-target="#suppression"
+                    data-action="{% url 'pelerins:supprimer' p.pk %}" data-nom="{{ p.nom }} {{ p.prenoms }} ({{ p.matricule }})">
+              <i class="bi bi-trash"></i></button>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucun pèlerin ne correspond aux critères.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="mt-3">{% include "partials/pagination.html" %}</div>
+
+{% if user|peut:"pelerins.supprimer" %}
+<div class="modal fade" id="suppression" tabindex="-1"><div class="modal-dialog">
+  <form method="post" class="modal-content" id="form-suppression">{% csrf_token %}
+    <input type="hidden" name="suivant" value="{{ request.get_full_path }}">
+    <div class="modal-header"><h5 class="modal-title">Supprimer <span id="suppression-nom"></span> ?</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <p class="small text-muted">Suppression logique : la fiche reste en base et peut être restaurée par un administrateur.</p>
+      <label class="form-label">Motif <span class="text-danger">*</span></label>
+      <textarea name="motif" class="form-control" required></textarea>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+      <button class="btn btn-danger"><i class="bi bi-trash"></i> Supprimer</button>
+    </div>
+  </form>
+</div></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("suppression")?.addEventListener("show.bs.modal", function (e) {
+    const bouton = e.relatedTarget;
+    document.getElementById("form-suppression").action = bouton.dataset.action;
+    document.getElementById("suppression-nom").textContent = bouton.dataset.nom;
+  });
+</script>
+{% endblock %}

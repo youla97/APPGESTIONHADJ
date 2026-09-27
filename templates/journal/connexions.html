@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Connexions – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h4 mb-0">Journal des connexions</h1>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'journal:historique' %}"><i class="bi bi-journal-text"></i> Journal des opérations</a>
+</div>
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-sm align-middle mb-0 small">
+    <thead class="table-light"><tr><th>Date</th><th>Événement</th><th>Identifiant</th><th>IP</th><th>Navigateur</th></tr></thead>
+    <tbody>
+    {% for c in page %}
+      <tr class="{% if c.evenement == 'ECHEC' %}table-danger{% endif %}">
+        <td class="text-nowrap">{{ c.date|date:"d/m/Y H:i:s" }}</td><td>{{ c.get_evenement_display }}</td>
+        <td>{{ c.identifiant_saisi }}</td><td>{{ c.adresse_ip|default:"" }}</td><td class="text-truncate" style="max-width: 280px">{{ c.navigateur }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucune entrée.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+<div class="mt-3">{% include "partials/pagination.html" %}</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Contrôle QR Code – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<h1 class="h4 mb-3">Contrôle d'un badge</h1>
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm"><div class="card-body">
+      <div id="lecteur" class="mb-2" style="width: 100%"></div>
+      <button id="demarrer" class="btn btn-primary w-100"><i class="bi bi-camera"></i> Scanner avec la caméra</button>
+    </div></div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm"><div class="card-body">
+      <form method="get">
+        <label class="form-label">Saisie manuelle (identifiant ou lien du QR Code)</label>
+        <div class="input-group"><input name="jeton" class="form-control" required autocomplete="off"><button class="btn btn-outline-primary">Vérifier</button></div>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+  document.getElementById("demarrer").addEventListener("click", function () {
+    this.classList.add("d-none");
+    const lecteur = new Html5Qrcode("lecteur");
+    lecteur.start({ facingMode: "environment" }, { fps: 10, qrbox: 240 }, function (texte) {
+      lecteur.stop();
+      location.href = "?jeton=" + encodeURIComponent(texte);
+    }).catch(function (e) { alert("Caméra indisponible : " + e); });
+  });
+</script>
+{% endblock %}

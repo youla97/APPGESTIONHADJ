@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Connexion – {{ APPLICATION_NOM }}{% endblock %}
+{% block public %}
+<div class="page-connexion">
+  <div class="card shadow-lg" style="max-width: 420px; width: 100%;">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <span class="drapeau" style="height:28px"><span style="width:14px"></span><span style="width:14px"></span><span style="width:14px"></span></span>
+        <div class="small text-muted text-uppercase mt-2">{{ APPLICATION_PAYS }}</div>
+        <h1 class="h4 mb-0">{{ APPLICATION_NOM }}</h1>
+      </div>
+      {% if form.errors %}
+      <div class="alert alert-danger py-2">Identifiant ou mot de passe incorrect.</div>
+      {% endif %}
+      <form method="post">{% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="id_username">Identifiant</label>
+          <input class="form-control" id="id_username" name="username" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="id_password">Mot de passe</label>
+          <input class="form-control" id="id_password" type="password" name="password" autocomplete="current-password" required>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn btn-primary w-100">Se connecter</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

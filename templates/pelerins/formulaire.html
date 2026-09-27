@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<h1 class="h4 mb-3">{{ titre }}</h1>
+
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  {% if f_pelerin.errors or f_passeport.errors or f_dossier.errors %}
+  <div class="alert alert-danger">Veuillez corriger les erreurs signalées ci-dessous.
+    {{ f_pelerin.non_field_errors }}{{ f_passeport.non_field_errors }}{{ f_dossier.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="card shadow-sm mb-3"><div class="card-header fw-semibold"><i class="bi bi-person-vcard"></i> Identification</div>
+    <div class="card-body"><div class="row">
+      {% include "partials/champ.html" with champ=f_pelerin.nom col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.prenom1 col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.prenom2 col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.sexe col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.date_naissance col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.lieu_naissance col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.nationalite col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.photo col="col-md-6" %}
+    </div></div>
+  </div>
+
+  {% if f_passeport %}
+  <div class="card shadow-sm mb-3"><div class="card-header fw-semibold"><i class="bi bi-passport"></i> Passeport</div>
+    <div class="card-body">
+      <div class="row">
+        {% include "partials/champ.html" with champ=f_passeport.numero col="col-md-4" %}
+        {% include "partials/champ.html" with champ=f_passeport.date_delivrance col="col-md-4" %}
+        {% include "partials/champ.html" with champ=f_passeport.date_expiration col="col-md-4" %}
+      </div>
+      <div id="controle-passeport" class="mb-3"></div>
+      <div class="row">
+        {% include "partials/champ.html" with champ=f_passeport.autorite_delivrance col="col-md-4" %}
+        {% include "partials/champ.html" with champ=f_passeport.pays_delivrance col="col-md-4" %}
+        {% include "partials/champ.html" with champ=f_passeport.scan col="col-md-4" %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card shadow-sm mb-3"><div class="card-header fw-semibold"><i class="bi bi-geo-alt"></i> Coordonnées et localisation</div>
+    <div class="card-body"><div class="row" data-cascade-geo>
+      {% include "partials/champ.html" with champ=f_pelerin.telephone_principal col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.telephone_secondaire col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.adresse col="col-md-4" %}
+      {% include "partials/champ.html" with champ=f_pelerin.region col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.prefecture col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.commune col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.quartier col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_pelerin.localite col="col-md-6" %}
+      {% include "partials/champ.html" with champ=f_pelerin.observations col="col-md-6" %}
+    </div></div>
+  </div>
+
+  {% if f_dossier %}
+  <div class="card shadow-sm mb-3"><div class="card-header fw-semibold"><i class="bi bi-folder2"></i> Informations Hadj</div>
+    <div class="card-body"><div class="row">
+      {% include "partials/champ.html" with champ=f_dossier.campagne col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_dossier.agence col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_dossier.groupe col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_dossier.statut_pelerin col="col-md-3" %}
+      {% include "partials/champ.html" with champ=f_dossier.observations col="col-12" %}
+    </div></div>
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    <a class="btn btn-outline-secondary" href="{% if pelerin %}{% url 'pelerins:detail' pelerin.pk %}{% else %}{% url 'pelerins:liste' %}{% endif %}">Annuler</a>
+  </div>
+</form>
+{% endblock %}

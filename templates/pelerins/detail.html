@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load droits %}
+{% block titre %}{{ pelerin.nom_complet }} – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+  <div>
+    <a href="{% url 'pelerins:liste' %}" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> Pèlerins</a>
+    <h1 class="h4 mb-0">{{ pelerin.nom }} {{ pelerin.prenoms }} <span class="badge text-bg-light border">{{ pelerin.matricule }}</span></h1>
+  </div>
+  <div class="d-flex gap-2">
+    {% if user|peut:"pelerins.modifier" %}
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'pelerins:modifier' pelerin.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+    {% endif %}
+    {% if user|peut:"pelerins.supprimer" %}
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#suppression"><i class="bi bi-trash"></i> Supprimer</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if doublons %}
+<div class="alert alert-warning">
+  <strong><i class="bi bi-exclamation-triangle"></i> Doublon potentiel :</strong>
+  {% for d in doublons %}<a class="alert-link" href="{% url 'pelerins:detail' d.pelerin_similaire.pk %}">{{ d.pelerin_similaire }}</a> ({{ d.get_critere_display|lower }}, score {{ d.score }}){% if not forloop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-12 col-xl-5">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="d-flex gap-3">
+        {% if pelerin.photo %}<img class="photo-pelerin" src="{{ pelerin.photo.url }}" alt="Photo">{% else %}<div class="photo-vide"><i class="bi bi-person"></i></div>{% endif %}
+        <dl class="row small mb-0 flex-grow-1">
+          <dt class="col-5">Sexe</dt><dd class="col-7">{{ pelerin.get_sexe_display }}</dd>
+          <dt class="col-5">Naissance</dt><dd class="col-7">{{ pelerin.date_naissance|date:"d/m/Y" }} ({{ pelerin.age }} ans)<br>à {{ pelerin.lieu_naissance }}</dd>
+          <dt class="col-5">Nationalité</dt><dd class="col-7">{{ pelerin.nationalite }}</dd>
+          <dt class="col-5">Téléphone</dt><dd class="col-7">{{ pelerin.telephone_principal }}{% if pelerin.telephone_secondaire %}<br>{{ pelerin.telephone_secondaire }}{% endif %}</dd>
+        </dl>
+      </div>
+      <hr>
+      <dl class="row small mb-0">
+        <dt class="col-4">Région</dt><dd class="col-8">{{ pelerin.commune.prefecture.region }}</dd>
+        <dt class="col-4">Préfecture</dt><dd class="col-8">{{ pelerin.commune.prefecture }}</dd>
+        <dt class="col-4">Commune</dt><dd class="col-8">{{ pelerin.commune }}</dd>
+        <dt class="col-4">Quartier</dt><dd class="col-8">{{ pelerin.quartier|default:"—" }}{% if pelerin.localite %} – {{ pelerin.localite }}{% endif %}</dd>
+        <dt class="col-4">Adresse</dt><dd class="col-8">{{ pelerin.adresse|default:"—" }}</dd>
+        {% if pelerin.observations %}<dt class="col-4">Observations</dt><dd class="col-8">{{ pelerin.observations|linebreaksbr }}</dd>{% endif %}
+      </dl>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-xl-7">
+    <div class="card shadow-sm mb-3"><div class="card-header fw-semibold"><i class="bi bi-passport"></i> Passeport(s)</div>
+      <ul class="list-group list-group-flush">
+        {% for p, statut in passeports %}
+        <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div><strong>{{ p.numero }}</strong>{% if not p.est_actif %} <span class="badge text-bg-light border">ancien</span>{% endif %}
+            <div class="small text-muted">Délivré le {{ p.date_delivrance|date:"d/m/Y" }} · expire le {{ p.date_expiration|date:"d/m/Y" }} · {{ p.pays_delivrance }}</div></div>
+          <div class="d-flex gap-2 align-items-center">
+            {% if p.scan %}<a class="btn btn-sm btn-outline-secondary" href="{{ p.scan.url }}" target="_blank"><i class="bi bi-file-earmark-image"></i> Scan</a>{% endif %}
+            <span class="badge text-bg-{% if statut == 'CONFORME' %}success{% elif statut == 'ATTENTION' %}warning{% elif statut == 'NON_CONFORME' %}danger{% else %}dark{% endif %}">{{ statut.label }}</span>
+          </div>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Aucun passeport enregistré.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <div class="card shadow-sm"><div class="card-header fw-semibold"><i class="bi bi-folder2"></i> Dossiers Hadj</div>
+      <ul class="list-group list-group-flush">
+      {% for d in dossiers %}
+        <li class="list-group-item">
+          <div class="d-flex flex-wrap justify-content-between gap-2">
+            <div><strong>{{ d.campagne }}</strong> – n° {{ d.numero }}
+              <div class="small text-muted">{% if d.agence %}Agence : {{ d.agence }} · {% endif %}{% if d.groupe %}Groupe : {{ d.groupe.nom }} · {% endif %}Pèlerin : {{ d.get_statut_pelerin_display }}</div></div>
+            <div><span class="badge text-bg-{% if d.statut == 'VALIDE' %}success{% elif d.statut == 'COMPLET' %}primary{% elif d.statut == 'BLOQUE' or d.statut == 'REJETE' %}danger{% else %}secondary{% endif %}">{{ d.get_statut_display }}</span></div>
+          </div>
+          <div class="progress my-2" style="height: 6px"><div class="progress-bar bg-success" style="width: {{ d.taux_completude }}%"></div></div>
+          <div class="small">Complétude : {{ d.taux_completude }} %
+            {% with manquants=d.elements_manquants %}{% if manquants %}<span class="text-danger"> – à compléter : {{ manquants|join:", " }}</span>{% endif %}{% endwith %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            {% if user|peut:"dossiers.valider" and d.statut == 'COMPLET' %}
+            <form method="post" action="{% url 'pelerins:valider_dossier' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> Valider</button></form>
+            {% endif %}
+            {% if user|peut:"badges.generer" %}
+              {% for b in d.badges.all %}{% if b.est_actif %}<a class="btn btn-sm btn-outline-primary" href="{% url 'badges:imprimer' b.pk %}"><i class="bi bi-person-badge"></i> Badge ({{ b.nb_impressions }} impr.)</a>{% endif %}{% endfor %}
+              <form method="post" action="{% url 'badges:generer' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary"><i class="bi bi-qr-code"></i> {% if d.badges.all %}Rééditer{% else %}Générer{% endif %} le badge</button></form>
+            {% endif %}
+          </div>
+        </li>
+      {% empty %}<li class="list-group-item text-muted">Aucun dossier.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-header fw-semibold"><i class="bi bi-paperclip"></i> Documents</div>
+      <ul class="list-group list-group-flush">
+        {% for doc in documents %}
+        <li class="list-group-item d-flex justify-content-between"><span>{{ doc.get_type_document_display }}{% if doc.libelle %} – {{ doc.libelle }}{% endif %}</span>
+          <a href="{{ doc.fichier.url }}" target="_blank">Ouvrir</a></li>
+        {% empty %}<li class="list-group-item text-muted">Aucun document joint.</li>{% endfor %}
+      </ul>
+      {% if user|peut:"pelerins.modifier" %}
+      <div class="card-body border-top">
+        <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">{% csrf_token %}
+          <div class="col-md-4">{{ form_document.type_document }}</div>
+          <div class="col-md-3">{{ form_document.libelle }}</div>
+          <div class="col-md-3">{{ form_document.fichier }}</div>
+          <div class="col-md-2"><button class="btn btn-primary w-100">Joindre</button></div>
+          {% for champ in form_document %}{% for e in champ.errors %}<div class="text-danger small">{{ champ.label }} : {{ e }}</div>{% endfor %}{% endfor %}
+          <div class="form-text">Formats acceptés : JPG, JPEG, PNG, PDF.</div>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-header fw-semibold"><i class="bi bi-clock-history"></i> Historique</div>
+      <ul class="list-group list-group-flush small">
+        {% for h in historique %}
+        <li class="list-group-item">
+          <strong>{{ h.get_action_display }}</strong> par {{ h.utilisateur|default:"système" }} le {{ h.date|date:"d/m/Y H:i" }}
+          {% for champ, c in h.changements.items %}<div class="text-muted">{{ c.libelle }} : <del>{{ c.ancien|default:"∅" }}</del> → {{ c.nouveau|default:"∅" }}</div>{% endfor %}
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Aucune opération.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% if user|peut:"pelerins.supprimer" %}
+<div class="modal fade" id="suppression" tabindex="-1"><div class="modal-dialog"><form method="post" action="{% url 'pelerins:supprimer' pelerin.pk %}" class="modal-content">{% csrf_token %}
+  <div class="modal-header"><h5 class="modal-title">Supprimer ce pèlerin ?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><p class="small text-muted">Suppression logique : la fiche reste en base et peut être restaurée par un administrateur.</p>
+    <label class="form-label">Motif <span class="text-danger">*</span></label><textarea name="motif" class="form-control" required></textarea></div>
+  <div class="modal-footer"><button class="btn btn-danger">Supprimer</button></div>
+</form></div></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% load static %}<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Badge {{ dossier.numero }}</title>
+  <style>
+    :root { --vert: #0b6e4f; }
+    body { font-family: system-ui, "Segoe UI", Arial, sans-serif; background: #eef1ef; margin: 0; padding: 24px 16px; }
+    .actions { text-align: center; margin-bottom: 16px; }
+    .actions button, .actions a { font: inherit; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--vert); background: var(--vert); color: #fff; cursor: pointer; text-decoration: none; margin: 0 4px; }
+    .actions a { background: #fff; color: var(--vert); }
+    /* Format carte CR80 : 85,6 × 54 mm */
+    .badge { width: 85.6mm; height: 54mm; margin: 0 auto; background: #fff; border-radius: 3mm; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.15); display: flex; flex-direction: column; }
+    .entete { background: var(--vert); color: #fff; text-align: center; padding: 1.2mm 0 1mm; position: relative; }
+    .entete .pays { font-size: 2.3mm; letter-spacing: .3mm; text-transform: uppercase; }
+    .entete .titre { font-size: 3.6mm; font-weight: 700; }
+    .drapeau { display: flex; height: 1mm; }
+    .drapeau span { flex: 1; } .drapeau span:nth-child(1) { background: #ce1126; } .drapeau span:nth-child(2) { background: #fcd116; } .drapeau span:nth-child(3) { background: #009460; }
+    .corps { flex: 1; display: flex; gap: 2mm; padding: 2mm; }
+    .photo { width: 20mm; height: 25mm; object-fit: cover; border: .3mm solid #ccc; border-radius: 1mm; background: #eee; }
+    .infos { flex: 1; font-size: 2.5mm; line-height: 1.35; min-width: 0; }
+    .infos .nom { font-size: 3.4mm; font-weight: 700; text-transform: uppercase; }
+    .infos .prenoms { font-size: 3mm; font-weight: 600; margin-bottom: .8mm; }
+    .infos b { color: #555; font-weight: 600; }
+    .qr { width: 22mm; height: 22mm; align-self: center; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .actions { display: none; }
+      .badge { box-shadow: none; margin: 0; }
+      @page { size: 85.6mm 54mm; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button onclick="imprimer()">Imprimer</button>
+    <a href="{% url 'pelerins:detail' pelerin.pk %}">Retour à la fiche</a>
+  </div>
+
+  <div class="badge">
+    <div class="entete">
+      <div class="pays">République de Guinée</div>
+      <div class="titre">HADJ {{ dossier.campagne.annee }}</div>
+    </div>
+    <div class="drapeau"><span></span><span></span><span></span></div>
+    <div class="corps">
+      {% if pelerin.photo %}<img class="photo" src="{{ pelerin.photo.url }}" alt="">{% else %}<div class="photo"></div>{% endif %}
+      <div class="infos">
+        <div class="nom">{{ pelerin.nom }}</div>
+        <div class="prenoms">{{ pelerin.prenoms }}</div>
+        <div><b>Dossier :</b> {{ dossier.numero }}</div>
+        {% if parametres.afficher_passeport_sur_badge and dossier.passeport %}<div><b>Passeport :</b> {{ dossier.passeport.numero }}</div>{% endif %}
+        <div><b>Commune :</b> {{ pelerin.commune.nom|truncatechars:24 }}</div>
+        {% if dossier.groupe %}<div><b>Groupe :</b> {{ dossier.groupe.nom }}</div>{% endif %}
+      </div>
+      <img class="qr" src="{% url 'badges:qr' badge.pk %}" alt="QR Code">
+    </div>
+  </div>
+
+<script>
+  function imprimer() {
+    // L'impression est journalisée (§19)
+    fetch("?confirmer=1", { credentials: "same-origin" }).finally(function () { window.print(); });
+  }
+</script>
+</body>
+</html>

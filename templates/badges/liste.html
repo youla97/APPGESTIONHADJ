@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}Badges – {{ APPLICATION_NOM }}{% endblock %}
+{% block contenu %}
+<h1 class="h4 mb-3">Badges</h1>
+<form class="d-flex flex-wrap gap-2 mb-3">
+  <input name="q" value="{{ q }}" class="form-control" style="max-width: 280px" placeholder="N° dossier, nom…">
+  <select name="etat" class="form-select" style="max-width: 200px">
+    <option value="">Tous</option>
+    <option value="imprimes" {% if etat == "imprimes" %}selected{% endif %}>Imprimés</option>
+    <option value="non_imprimes" {% if etat == "non_imprimes" %}selected{% endif %}>Non imprimés</option>
+  </select>
+  <button class="btn btn-primary">Filtrer</button>
+</form>
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table align-middle mb-0">
+    <thead class="table-light"><tr><th>Dossier</th><th>Pèlerin</th><th>Campagne</th><th>Impressions</th><th>Dernière vérification</th><th></th></tr></thead>
+    <tbody>
+    {% for b in badges %}
+      <tr>
+        <td>{{ b.dossier.numero }}</td>
+        <td><a href="{% url 'pelerins:detail' b.dossier.pelerin_id %}">{{ b.dossier.pelerin }}</a></td>
+        <td>{{ b.dossier.campagne }}</td>
+        <td>{% if b.nb_impressions %}<span class="badge text-bg-success">{{ b.nb_impressions }}</span>{% else %}<span class="badge text-bg-secondary">Non imprimé</span>{% endif %}</td>
+        <td>{{ b.derniere_verification|date:"d/m/Y H:i"|default:"—" }}</td>
+        <td><a class="btn btn-sm btn-outline-primary" href="{% url 'badges:imprimer' b.pk %}">Ouvrir</a></td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Aucun badge.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

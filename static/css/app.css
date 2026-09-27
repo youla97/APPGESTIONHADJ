@@ -1,0 +1,41 @@
+:root {
+  --vert: #0b6e4f;
+  --vert-fonce: #084c37;
+  --rouge-gn: #ce1126;
+  --jaune-gn: #fcd116;
+  --vert-gn: #009460;
+  --fond: #f4f6f5;
+}
+
+body { background: var(--fond); }
+
+.bandeau { background: var(--vert-fonce); }
+
+.drapeau { display: inline-flex; height: 18px; border-radius: 2px; overflow: hidden; }
+.drapeau span { width: 9px; }
+.drapeau span:nth-child(1) { background: var(--rouge-gn); }
+.drapeau span:nth-child(2) { background: var(--jaune-gn); }
+.drapeau span:nth-child(3) { background: var(--vert-gn); }
+
+@media (min-width: 992px) {
+  .menu-lateral { width: 250px; min-height: calc(100vh - 56px); background: #fff; border-right: 1px solid #e3e7e5; flex-shrink: 0; }
+}
+.menu-lateral .nav-link { color: #334; border-radius: .4rem; padding: .5rem .75rem; }
+.menu-lateral .nav-link i { width: 1.4rem; display: inline-block; }
+.menu-lateral .nav-link:hover { background: #eef4f1; }
+.menu-lateral .nav-link.active { background: var(--vert); color: #fff; }
+.menu-titre { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: #889; margin: 1rem .75rem .25rem; }
+
+.contenu { min-width: 0; }
+
+.carte-indicateur { border: 0; border-left: 4px solid var(--vert); }
+.carte-indicateur .valeur { font-size: 1.8rem; font-weight: 600; line-height: 1.1; }
+.carte-indicateur.alerte { border-left-color: var(--rouge-gn); }
+.carte-indicateur.attention { border-left-color: #e0a800; }
+
+.btn-primary { --bs-btn-bg: var(--vert); --bs-btn-border-color: var(--vert); --bs-btn-hover-bg: var(--vert-fonce); --bs-btn-hover-border-color: var(--vert-fonce); }
+
+.photo-pelerin { width: 140px; height: 170px; object-fit: cover; border-radius: .4rem; background: #e9ecef; }
+.photo-vide { width: 140px; height: 170px; display: flex; align-items: center; justify-content: center; border-radius: .4rem; background: #e9ecef; color: #99a; font-size: 3rem; }
+
+.page-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--vert-fonce), var(--vert)); padding: 16px; }
